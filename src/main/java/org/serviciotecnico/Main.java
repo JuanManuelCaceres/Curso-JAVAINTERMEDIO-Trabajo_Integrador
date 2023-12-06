@@ -25,12 +25,13 @@ public class Main {
 
 
   public static void main(String[] args) {
+
     Scanner in = new Scanner(System.in);
+
     boolean conectar = true;
     System.out.println("Cargando datos de la base de datos...");
 
     //Creando entidades para manejar los objetos
-
     EntityManager em = getEntityManager();
     AreaDAO areaDAO = new AreaDAOIMP(em);
     ClientesDAO clientesDAO = new ClienteDAOIMP(em);
@@ -43,6 +44,7 @@ public class Main {
     ServicioDAO servicioDAO = new ServicioDAOIMP(em);
     TecnicoDAO tecnicoDAO = new TecnicoDAOIMP(em);
     EntityTransaction tx = em.getTransaction();
+
     System.out.println("Base de datos cargada correctamente");
     System.out.println("");
     System.out.println("Sistema General - Servicio Tecnico S.R.L");
@@ -63,7 +65,6 @@ public class Main {
     }
 
     while (conectar) {
-      //Revisar si hay que dejarlo o no
       tx.begin();
 
       System.out.print("Ingrese ID de usuario: ");
@@ -178,7 +179,6 @@ public class Main {
                     break;
                   case 2:
                     in.nextLine();
-                    List<Empleado> listaEmpleados = empleadosDAO.getAll();
 
                     System.out.print("Nombre: ");
                     String nombreEmpleadoBuscado = in.nextLine();
@@ -301,6 +301,7 @@ public class Main {
                   }
                 }
                 tx.commit();
+                em.refresh(empleadosMod);
               }
               break;
 
@@ -647,12 +648,14 @@ public class Main {
                   switch (opcionRRHHInformes) {
                     case 1: {
                       tx.begin();
-                      LocalDate hoy = LocalDate.of(LocalDateTime.now().getYear(), LocalDateTime.now().getMonth(), LocalDateTime.now().getDayOfMonth());
 
-                      List<Reporte> reportesDiarios = reporteDAO.getAll().stream().filter(reporte -> reporte.getFechaAlta().equals(hoy)).collect(Collectors.toList());
+                      List<Reporte> reportesDiarios =
+                              reporteDAO.getAll().stream()
+                              .filter(reporte -> reporte.getFechaAlta().isAfter(LocalDate.now().atStartOfDay()))
+                                      .collect(Collectors.toList());
 
                       //Comprobacion de que existen reportes
-                      reportesDiarios.forEach(System.out::println);
+                      //reportesDiarios.forEach(System.out::println);
 
                       //Impresion de reportes
                       for (Reporte reporte : reportesDiarios) {
@@ -671,7 +674,9 @@ public class Main {
                                   "\t\tDescripcion: " + incidente.getIncidente().getDescripcion() + "\n" +
                                           "\t\tTecnico Responsable:" + incidente.getTecnico().getNombre() + " " + incidente.getTecnico().getApellido() + "\n" +
                                           "\t\tEstado: " + incidente.getDescripcion() + "\n" +
-                                          "\t\tFecha de resolucion: " + incidente.getResolucion());
+                                          "\t\t"+((incidente.getResuelto()==1)
+                                                  ? "Fecha de resolucion: " + incidente.getResolucion()
+                                                  : "Fecha de resolucion estimada: "+incidente.getReporte().getFecha_resolucion_estimada()));
 
                         }
 
@@ -1286,6 +1291,8 @@ public class Main {
                     incidenteReporte.setTecnico(tecnicoDAO.getByID(tecnicoId));
                     tecnico.addIncidenteReporte(incidenteReporte);
 
+                    nuevoReporte.setDescripcion("En espera");
+
                     //Actualizamos ambos registros
                     reporteDAO.update(nuevoReporte);
                     incidentesReporteDAO.update(incidenteReporte);
@@ -1317,7 +1324,7 @@ public class Main {
 
                 }break;
 
-                case 2:
+                case 2: {
                   tx.begin();
                   System.out.print("Ingrese ID Reporte: ");
                   int idReporteBuscado = in.nextInt();
@@ -1349,9 +1356,9 @@ public class Main {
                   System.out.println("Presione enter para continuar");
                   String enter = in.nextLine();
                   tx.commit();
-                  break;
+                }break;
 
-                case 3:
+                case 3: {
 
                   boolean continarSecMod = true;
                   System.out.print("ID reporte: ");
@@ -1366,9 +1373,9 @@ public class Main {
                     System.out.println("Lista de Acciones");
                     System.out.println(
                             "1- Ver Reporte\n" +
-                            "2- Agregar Incidentes\n" +
-                            "3- Modificar Incidentes\n" +
-                            "0- Terminar");
+                                    "2- Agregar Incidentes\n" +
+                                    "3- Modificar Incidentes\n" +
+                                    "0- Terminar");
 
                     System.out.print("Opcion: ");
                     int opcionSecModReporte = in.nextInt();
@@ -1376,10 +1383,10 @@ public class Main {
                     switch (opcionSecModReporte) {
                       case 0:
                         continarSecMod = false;
-                        continuarMesaAyuda=false;
+                        continuarMesaAyuda = false;
                         break;
 
-                      case 1:
+                      case 1: {//Ver Reporte
 
                         reporteMod = reporteDAO.getByID(reporteMod.getId());
 
@@ -1390,7 +1397,7 @@ public class Main {
                                 "ID Reporte: " + reporteMod.getId() + "\n" +
                                         "Cliente:    " + reporteMod.getCliente().getRazonSocial() + "\n" +
                                         "Fecha Alta: " + reporteMod.getFechaAlta().toString() + "\n" +
-                                        "Estado:     " +  ((reporteMod.getResuelto() == 1)
+                                        "Estado:     " + ((reporteMod.getResuelto() == 1)
                                         ? "Resuelto\n"
                                         + "Fecha de Resolucion: " + reporteMod.getFecha_resolucion().toString()
                                         : "Sin Resolver\n" + "Fecha de Resolucion Estimada: " + reporteMod.getFecha_resolucion_estimada().toString()));
@@ -1403,7 +1410,7 @@ public class Main {
                           System.out.println(
                                   "ID:        " + incidente.getId() + "\n" +
                                           "Incidente: " + incidente.getIncidente().getNombre() + " - " + incidente.getIncidente().getDescripcion() + "\n" +
-                                          "Tecnico:   " + incidente.getTecnico().getNombre() +" "+incidente.getTecnico().getApellido() + "\n" +
+                                          "Tecnico:   " + incidente.getTecnico().getNombre() + " " + incidente.getTecnico().getApellido() + "\n" +
                                           "Estado:    " + incidente.getDescripcion() + "\n" +
                                           ((incidente.getResuelto() == 1
                                                   ? "Fecha de resolucion: " + incidente.getResolucion().toString()
@@ -1412,10 +1419,11 @@ public class Main {
 
                         in.nextLine();
                         System.out.println("Presione Enter para continuar");
-                        enter = in.nextLine();
+                        String enter = in.nextLine();
 
-                        break;
-                      case 2:
+                      }break;
+
+                      case 2: {//Agregar Incidentes
                         if (reporteMod.equals(new Reporte())) {
                           System.out.println("Debe seleccionar un reporte");
                         } else {
@@ -1506,9 +1514,9 @@ public class Main {
                           continarSecMod = false;
 
                         }
-                        break;
+                      }break;
 
-                      case 3: {
+                      case 3: {//Modificar Incidentes
                         tx.commit();
 
 
@@ -1517,12 +1525,12 @@ public class Main {
                                 "1- Marcar como Resuelto" + "\n" +
                                         "2- Modificar Tecnico Responsable" + "\n" +
                                         "3- Modificar Estado" + "\n" +
-                                        "4- Eliminar Incidente" + "\n"+
+                                        "4- Eliminar Incidente" + "\n" +
                                         "0- Terminar");
 
                         System.out.println("Opcion: ");
                         int opcionModIncidenteReporte = in.nextInt();
-                        while (opcionModIncidenteReporte!=0) {
+                        while (opcionModIncidenteReporte != 0) {
                           switch (opcionModIncidenteReporte) {
                             case 1: {
                               //Marcar icnidente como resuelto
@@ -1627,11 +1635,11 @@ public class Main {
                           }
 
                           System.out.println(
-                                    "1- Marcar como Resuelto" + "\n" +
-                                            "2- Modificar Tecnico Responsable" + "\n" +
-                                            "3- Modificar Estado" + "\n" +
-                                            "4- Eliminar Incidente" + "\n"+
-                                            "0- Terminar");
+                                  "1- Marcar como Resuelto" + "\n" +
+                                          "2- Modificar Tecnico Responsable" + "\n" +
+                                          "3- Modificar Estado" + "\n" +
+                                          "4- Eliminar Incidente" + "\n" +
+                                          "0- Terminar");
 
                           System.out.println("Opcion: ");
                           opcionModIncidenteReporte = in.nextInt();
@@ -1641,7 +1649,7 @@ public class Main {
                     }
                   }
                   tx.commit();
-                  break;
+                }break;
               }
             }
           break;
