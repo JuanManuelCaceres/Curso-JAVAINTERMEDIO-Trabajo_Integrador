@@ -1,0 +1,10 @@
+Formas para reducir codigo, y dejarlo mas orientado a objetos.
+
+1- 	Crear tantos constructores y sobrecargarlos como sea necesario para cada caso.
+
+2- 	Crear los metodos de busqueda y filtrado de listas especificas en los propios DAOS e Implementaciones.
+
+3- 	Utilizar metodos que agreguen o modifiquen las entidades, para reducir cantidad de codigo y hacerlo mas legible, como por ejemplo, a la hora de crear un reporte de incidentes nuevo, crear un metodo que agregue los incidentes correspondientes, para despues reutilizarlo al modificar dicho reporte de incidentes.
+
+4- 	Los reportes diarios crearlos a traves de metodos dentro de los repositorios ya que estos se repiten, como por ejemplo, obtener el tecnico que mas incidentes resolvio en los ultimos N dias, ya que este codigo se puedde reutilziar, luego se lo podria filtrar por especialidad, para obtener el tecnico que mas resolvuio para una especialidad correspondiente.
+	
